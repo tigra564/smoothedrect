@@ -1,0 +1,311 @@
+\usepackage{tikz}
+\usetikzlibrary{calc,intersections}
+
+\pgfkeys{/pgf/smoothed rectangle/.cd,
+	arc/.initial=4pt,
+	corner anchors/.initial=3,
+	side anchors/.initial=3,
+	side anchors/.forward to=/pgf/smoothed rectangle/x anchors,
+	side anchors/.forward to=/pgf/smoothed rectangle/y anchors,
+	x anchors/.initial=3,
+	y anchors/.initial=3,
+}
+
+\def\smrect@anchor@init{
+	\separator \pgf@xa=\pgf@x \pgf@ya=\pgf@y
+	\inortheast
+}
+
+\def\smrect@xside@anchor#1#2#3#4{
+	% #1 -- number of mid-anchor ranges
+	% #2 -- anchor number
+	% #3 -- x multiplier, 1 for east, -1 for west
+	% #4 -- y multiplier, 1 for north, -1 for south
+	\smrect@anchor@init
+	\advance\pgf@y\pgf@ya
+	\pgf@x=#3\pgf@x
+	\pgf@y=#4\pgf@y
+	\pgfmathdivide@{#2}{#1}
+	\pgfmathmultiply@{\pgf@x}{\pgfmathresult}
+	\pgfmathsetlength{\pgf@x}{\pgfmathresult}
+}
+
+\def\smrect@yside@anchor#1#2#3#4{%
+	% #1 -- number of mid-anchor ranges
+	% #2 -- anchor number
+	% #3 -- x multiplier, 1 for east, -1 for west
+	% #4 -- y multiplier, 1 for north, -1 for south
+	\smrect@anchor@init
+	\advance\pgf@x\pgf@xa
+	\pgf@x=#3\pgf@x
+	\pgf@y=#4\pgf@y
+	\pgfmathdivide@{#2}{#1}
+	\pgfmathmultiply@{\pgf@y}{\pgfmathresult}
+	\pgfmathsetlength{\pgf@y}{\pgfmathresult}
+}
+
+\def\smrect@corner@anchor#1#2#3#4#5{
+	% #1 -- number of mid-anchor ranges
+	% #2 -- anchor number
+	% #3 -- angle multiplier, 1 for counter-clockwise, -1 for clockwise
+	% #4 -- x multiplier, 1 for east, -1 for west
+	% #5 -- y multiplier, 1 for north, -1 for south
+	\smrect@anchor@init
+	\pgf@x=#4\pgf@x \pgf@y=#5\pgf@y
+	\pgfmathparse{cos((1 - (2-#4-#5)*#4) * 45 + #3*45*#2/#1) * \pgf@xa}
+	\addtolength{\pgf@x}{\pgfmathresult pt}
+	\pgfmathparse{sin((1 - (2-#4-#5)*#4) * 45 + #3*45*#2/#1) * \pgf@ya}
+	\addtolength{\pgf@y}{\pgfmathresult pt}
+}
+
+\def\smrect@anchor@path{
+	\smrect@anchor@init
+	\pgf@xb=\pgf@xa \pgf@yb=\pgf@ya
+	\advance\pgf@xa\pgf@x
+	\advance\pgf@ya\pgf@y
+	\pgfsetcornersarced{\pgfpoint{\pgf@xb}{\pgf@yb}}
+	\pgfpathmoveto{\pgfpoint{\pgf@xa}{\pgf@ya}}
+	\pgfpathlineto{\pgfpoint{\pgf@xa}{-\pgf@ya}}
+	\pgfpathlineto{\pgfpoint{-\pgf@xa}{-\pgf@ya}}
+	\pgfpathlineto{\pgfpoint{-\pgf@xa}{\pgf@ya}}
+	\pgfpathclose
+}
+
+\def\smrect@vanchor#1#2{
+	% #1 -- y position
+	% #2 -- x multiplier, 1 for east, -1 for west
+	\edef\corry{#1}
+	\separator \pgf@xa=#2\pgf@x
+	\inortheast	\advance\pgf@xa#2\pgf@x
+	\edef\corrx{\the\pgf@xa}
+	\pgfintersectionofpaths{\smrect@anchor@path}{
+		\pgfpathmoveto{\pgfpoint{0pt}{\corry}}
+		\pgfpathlineto{\pgfpoint{\corrx}{\corry}}
+	}
+	\pgfpointintersectionsolution{1}
+}
+
+\pgfdeclareshape{smoothed rectangle}{
+	\savedmacro\arc{
+		\pgfmathsetlength{\pgf@x}{\pgfkeysvalueof{/pgf/smoothed rectangle/arc}}
+		\edef\arc{\the\pgf@x}
+	}
+	\savedmacro\corneranchors{
+		\pgfmathtruncatemacro{\corneranchors}{\pgfkeysvalueof{/pgf/smoothed rectangle/corner anchors}}
+	}
+	\savedmacro\xanchors{
+		\pgfmathtruncatemacro{\xanchors}{\pgfkeysvalueof{/pgf/smoothed rectangle/x anchors}}
+	}
+	\savedmacro\yanchors{
+		\pgfmathtruncatemacro{\yanchors}{\pgfkeysvalueof{/pgf/smoothed rectangle/x anchors}}
+	}
+	\savedmacro{\inortheastcoords}{
+		% Inner north-east
+		\pgfpointorigin
+		% Add raw text size
+		\advance\pgf@x.5\wd\pgfnodeparttextbox
+		\advance\pgf@y.5\ht\pgfnodeparttextbox
+		\advance\pgf@y.5\dp\pgfnodeparttextbox
+		% Add inner separators
+		\pgfmathsetlength\pgf@xa{\pgfkeysvalueof{/pgf/inner xsep}}
+		\advance\pgf@x\pgf@xa
+		\pgfmathsetlength\pgf@ya{\pgfkeysvalueof{/pgf/inner ysep}}
+		\advance\pgf@y\pgf@ya
+		% Adjust for minimal dimensions
+		\pgfmathsetlength\pgf@xa{\pgfkeysvalueof{/pgf/minimum width}}
+		\pgfmathsetlength\pgf@ya{\pgfkeysvalueof{/pgf/minimum height}}
+		\ifdim\pgf@x<.5\pgf@xa
+			\pgf@x=.5\pgf@xa
+		\fi
+		\ifdim\pgf@y<.5\pgf@ya
+			\pgf@y=.5\pgf@ya
+		\fi
+		% Add allowance for corner arcs, i.e. make sure they smoothly meet sides
+		\pgfmathsetlength\pgf@xb{\pgfkeysvalueof{/pgf/smoothed rectangle/arc}}
+		%\advance\pgf@x\pgf@xb
+		\ifdim\pgf@x<\pgf@xb
+			\pgf@x=\pgf@xb
+		\fi
+		\ifdim\pgf@y<\pgf@xb
+			\pgf@y=\pgf@xb
+		\fi
+		% And finally subtract \arc, so we can easily calculate anchors like
+		% north north east or east north east
+		\advance\pgf@x-\pgf@xb
+		\advance\pgf@y-\pgf@xb
+		% Save
+		\edef\inortheastx{\the\pgf@x}
+		\addtosavedmacro{\inortheastx}
+		\edef\inortheasty{\the\pgf@y}
+		\addtosavedmacro{\inortheasty}
+	}
+	\savedmacro{\sepcoords}{
+		\pgfmathsetlength\pgf@x{\pgfkeysvalueof{/pgf/smoothed rectangle/arc}}
+		\pgf@xa=\pgf@x
+		% We need sep + arc, don't need standalone sep
+		\pgfmathsetlength\pgf@x{\pgfkeysvalueof{/pgf/outer xsep}}
+		\advance\pgf@x\pgf@xa
+		\pgfmathsetlength\pgf@y{\pgfkeysvalueof{/pgf/outer ysep}}
+		\advance\pgf@y\pgf@xa
+		% Save
+		\edef\sepx{\the\pgf@x}
+		\addtosavedmacro{\sepx}
+		\edef\sepy{\the\pgf@y}
+		\addtosavedmacro{\sepy}
+	}
+
+	\savedanchor{\separator}{
+		\pgfmathsetlength\pgf@x\sepx
+		\pgfmathsetlength\pgf@y\sepy
+	}
+	\savedanchor{\inortheast}{
+		\pgfmathsetlength\pgf@x\inortheastx
+		\pgfmathsetlength\pgf@y\inortheasty
+	}
+	\savedanchor{\centerpoint}{
+		\pgfpointorigin
+	}
+	\savedanchor{\text}{
+		\pgf@y=-0.5\ht\pgfnodeparttextbox
+		\advance\pgf@y by 0.5\dp\pgfnodeparttextbox
+		\pgf@x=-0.5\wd\pgfnodeparttextbox
+	}
+	\savedanchor{\midpoint}{%
+		\pgf@x=0pt
+		\pgfmathsetlength\pgf@y{+.5ex}
+	}
+
+	\anchor{center}{\centerpoint}
+	\anchor{text}{\text}
+	\anchor{mid}{\midpoint}
+	\anchor{mid east}{\midpoint \smrect@vanchor{\the\pgf@y}{1}}
+	\anchor{mid west}{\midpoint \smrect@vanchor{\the\pgf@y}{-1}}
+	\anchor{base}{\text \pgf@x=0pt}
+	\anchor{base east}{\text \smrect@vanchor{\the\pgf@y}{1}}
+	\anchor{base west}{\text \smrect@vanchor{\the\pgf@y}{-1}}
+
+	\anchor{north}{\smrect@anchor@init \advance\pgf@y\pgf@ya \pgf@x=0pt}
+	\anchor{north north east}{\smrect@anchor@init \advance\pgf@y\pgf@ya}
+	\anchor{north east}{\smrect@corner@anchor{1}{0}{1}{1}{1}}
+	\anchor{east north east}{\smrect@anchor@init \advance\pgf@x\pgf@xa}
+	\anchor{east}{\smrect@anchor@init \advance\pgf@x\pgf@xa \pgf@y=0pt}
+	\anchor{east south east}{\smrect@anchor@init \advance\pgf@x\pgf@xa \pgf@y=-\pgf@y}
+	\anchor{south east}{\smrect@corner@anchor{1}{0}{1}{1}{-1}}
+	\anchor{south south east}{\smrect@anchor@init \advance\pgf@y\pgf@ya \pgf@y=-\pgf@y}
+	\anchor{south}{\smrect@anchor@init \advance\pgf@y\pgf@ya \pgf@x=0pt \pgf@y=-\pgf@y}
+	\anchor{south south west}{\smrect@anchor@init \advance\pgf@y\pgf@ya \pgf@x=-\pgf@x \pgf@y=-\pgf@y}
+	\anchor{south west}{\smrect@corner@anchor{1}{0}{1}{-1}{-1}}
+	\anchor{west south west}{\smrect@anchor@init \advance\pgf@x\pgf@xa \pgf@x=-\pgf@x \pgf@y=-\pgf@y}
+	\anchor{west}{\smrect@anchor@init \advance\pgf@x\pgf@xa \pgf@x=-\pgf@x \pgf@y=0pt}
+	\anchor{west north west}{\smrect@anchor@init \advance\pgf@x\pgf@xa \pgf@x=-\pgf@x}
+	\anchor{north west}{\smrect@corner@anchor{1}{0}{1}{-1}{1}}
+	\anchor{north north west}{\smrect@anchor@init \advance\pgf@y\pgf@ya \pgf@x=-\pgf@x}
+
+	\expandafter\pgfutil@g@addto@macro\csname pgf@sh@s@smoothed rectangle\endcsname{%
+		\c@pgf@counta\xanchors\relax%
+		\c@pgf@countb\xanchors\relax \advance\c@pgf@countb by 1\relax%
+		\pgfmathloop%
+			\ifnum\c@pgf@counta>0\relax{%
+				\foreach \side/\ymul in {north/1, south/-1} {%
+					% ...(manually \xdef as \gdef is normally used by \anchor)...
+					\expandafter\xdef%
+						\csname pgf@anchor@smoothed rectangle@\side\space\the\c@pgf@counta\endcsname{%
+							\noexpand\smrect@xside@anchor%
+								\the\c@pgf@countb \the\c@pgf@counta {1} {\ymul}%
+					}%
+					\expandafter\xdef%
+						\csname pgf@anchor@smoothed rectangle@\side\space-\the\c@pgf@counta\endcsname{%
+							\noexpand\smrect@xside@anchor%
+								\the\c@pgf@countb \the\c@pgf@counta {-1} {\ymul}%
+					}%
+				}%
+			}%
+			\advance\c@pgf@counta-1\relax%
+		\repeatpgfmathloop%
+	}%
+
+	\expandafter\pgfutil@g@addto@macro\csname pgf@sh@s@smoothed rectangle\endcsname{%
+		\c@pgf@counta\yanchors\relax%
+		\c@pgf@countb\yanchors\relax \advance\c@pgf@countb by 1\relax%
+		\pgfmathloop%
+			\ifnum\c@pgf@counta>0\relax{%
+				\foreach \side/\xmul in {east/1, west/-1} {%
+					% ...(manually \xdef as \gdef is normally used by \anchor)...
+					\expandafter\xdef%
+						\csname pgf@anchor@smoothed rectangle@\side\space\the\c@pgf@counta\endcsname{%
+							\noexpand\smrect@yside@anchor%
+								\the\c@pgf@countb \the\c@pgf@counta {\xmul} {1}%
+					}%
+					\expandafter\xdef%
+						\csname pgf@anchor@smoothed rectangle@\side\space-\the\c@pgf@counta\endcsname{%
+							\noexpand\smrect@yside@anchor%
+								\the\c@pgf@countb \the\c@pgf@counta {\xmul} {-1}%
+					}%
+				}%
+			}%
+			\advance\c@pgf@counta-1\relax%
+		\repeatpgfmathloop%
+	}%
+
+	\expandafter\pgfutil@g@addto@macro\csname pgf@sh@s@smoothed rectangle\endcsname{%
+		\c@pgf@counta\corneranchors\relax%
+		\c@pgf@countb\corneranchors\relax \advance\c@pgf@countb by 1\relax%
+		\pgfmathloop%
+			\ifnum\c@pgf@counta>0\relax{%
+				\foreach \corner/\xmul/\ymul in {
+					north east/1/1,
+					north west/-1/1,
+					south west/-1/-1,
+					south east/1/-1
+				} {%
+					% ...(manually \xdef as \gdef is normally used by \anchor)...
+					\expandafter\xdef%
+						\csname pgf@anchor@smoothed rectangle@\corner\space\the\c@pgf@counta\endcsname{%
+							\noexpand\smrect@corner@anchor%
+								\the\c@pgf@countb \the\c@pgf@counta {1} {\xmul} {\ymul}%
+					}%
+					\expandafter\xdef%
+						\csname pgf@anchor@smoothed rectangle@\corner\space-\the\c@pgf@counta\endcsname{%
+							\noexpand\smrect@corner@anchor%
+								\the\c@pgf@countb \the\c@pgf@counta {-1} {\xmul} {\ymul}%
+					}%
+				}%
+			}%
+			\advance\c@pgf@counta-1\relax%
+		\repeatpgfmathloop%
+	}%
+
+	\backgroundpath{
+		\pgf@xa=\inortheastx \advance\pgf@xa\arc
+		\pgf@ya=\inortheasty \advance\pgf@ya\arc
+		\pgfsetcornersarced{\pgfpoint{\arc}{\arc}}
+		\pgfpathmoveto{\pgfpoint{\pgf@xa}{\pgf@ya}}
+		\pgfpathlineto{\pgfpoint{\pgf@xa}{-\pgf@ya}}
+		\pgfpathlineto{\pgfpoint{-\pgf@xa}{-\pgf@ya}}
+		\pgfpathlineto{\pgfpoint{-\pgf@xa}{\pgf@ya}}
+		\pgfpathclose
+	}
+
+	\anchorborder{
+		% Target point is small (1pt raduis)
+		\edef\targpointx{\the\pgf@x}
+		\edef\targpointy{\the\pgf@y}
+		%\pgf@relevantforpicturesizefalse
+		\pgftransformreset
+		% Find the bounding box and the dot that lies on it pointed by target direction
+		\smrect@anchor@init
+		\advance\pgf@x\pgf@xa
+		\advance\pgf@y\pgf@ya
+		\pgfpointborderrectangle{\pgfpoint{\targpointx}{\targpointy}}
+			{\pgfpoint{\pgf@x}{\pgf@y}}
+		\edef\corrx{\the\pgf@x}
+		\edef\corry{\the\pgf@y}
+		% Determine the real intersection
+		\pgfintersectionofpaths{\smrect@anchor@path}{
+			\pgfpathmoveto{\pgfpoint{0pt}{0pt}}
+			\pgfpathlineto{\pgfpoint{\corrx}{\corry}}
+		}
+		% Return intersection point
+		\pgfpointintersectionsolution{1}
+	}
+}

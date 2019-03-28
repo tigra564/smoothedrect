@@ -1,0 +1,133 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage[
+	driver=xetex,
+	top=10mm, bottom=10mm, outer=18mm, inner=18mm, includefoot,
+	%showframe
+]{geometry}
+
+\usepackage{smoothedrect}
+\usetikzlibrary{arrows,matrix}
+
+\tikzset{
+	shape example/.style={
+		color=black!30,
+		draw,
+		fill=yellow!30,
+		line width=.5cm,
+		inner xsep=1.5cm,
+		inner ysep=1cm
+	},
+	diagram/.style={
+		matrix of nodes,
+		nodes=comp,
+		row sep=1.5cm,
+		column sep=1.7cm,
+	},
+	comp/.style={
+		smoothed rectangle,
+		/pgf/smoothed rectangle/arc=10pt,
+		/pgf/smoothed rectangle/corner anchors=2,
+		/pgf/smoothed rectangle/x anchors=3,
+		/pgf/smoothed rectangle/y anchors=2,
+		draw=black, very thick,
+		minimum height=2\baselineskip,
+		text width=3em,
+		inner sep=0pt,
+		text centered,
+		font=\bfseries,
+		anchor=center,
+	},
+	inter/.style={
+		draw=black, very thick,
+	},
+}
+
+\begin{document}
+
+\LARGE
+\center
+\begin{tikzpicture}
+\node[shape=smoothed rectangle,
+	/pgf/smoothed rectangle/arc=1.7cm,
+	/pgf/smoothed rectangle/corner anchors=2,
+	/pgf/smoothed rectangle/x anchors=3,
+	/pgf/smoothed rectangle/y anchors=2,
+	shape example] (s) {Smoothed Rectangle\vrule width 1pt height 2.7cm};
+
+\foreach \anchor/\placement in {
+	north north west/above, north/above, north north east/above,
+	north 2/below,
+	north west 2/above left,
+	north west/above left, north east/above right,
+	west north west/left, east north east/right,
+	east -2/left,
+	west/left, center/left, east/right,
+	mid west/right, mid/above, mid east/left,
+	text/left,
+	base west/left, base/below, base east/right,
+	west south west/left, east south east/right,
+	south west/below left, south east/below right,
+	south south west/below, south/below, south south east/below,
+	15/right, 135/below}
+	\draw[shift=(s.\anchor)] plot[mark=x] coordinates{(0,0)}
+		node[\placement] {\scriptsize\texttt{(s.\anchor)}};
+\end{tikzpicture}
+
+\bigskip
+
+\begin{tikzpicture}[->,>=stealth']
+	\matrix[diagram] {
+		|(A)| A & |(B)| B & |(C)| C \\
+		|(D)| D & |(E)| E & |(F)| F \\
+		|(G)| G & |(H)| H & |(I)| I \\
+	};
+
+	\draw[very thick,->] (A.south east -1) -- (E.north west 1);
+	\draw[very thick,<-] (A.south east 1) -- (E.north west -1);
+	\draw[very thick,->] (E) -- (I);
+	\draw[very thick,->] (E.north -3) -- (B.south -3);
+	\draw[very thick,<-] (E.north 3) -- (B.south 3);
+	\draw[very thick,<->] (E.north east) -- (C.south west);
+	\draw[very thick,-] (E.south south east) -- (H.north north east);
+	\draw[very thick,->] (E.west north west) -- (D.east south east);
+	\draw[very thick,->] (E.west south west) -- (D.east north east);
+	\draw[very thick,->] (F.west 1) -- (E.east 1);
+	\draw[very thick,->] (F.west 2) -- (E.east 2);
+	\draw[very thick,<-] (F.west -1) -- (E.east -1);
+	\draw[very thick,<-] (F.west -2) -- (E.east -2);
+	\draw[very thick,-] (E.south west -2) -- (G.north east 2);
+	\draw[very thick,-] (E.south west -1) -- (G.north east 1);
+	\draw[very thick,-] (E.south west) -- (G.north east);
+	\draw[very thick,-] (E.south west 1) -- (G.north east -1);
+	\draw[very thick,-] (E.south west 2) -- (G.north east -2);
+\end{tikzpicture}
+
+\bigskip
+
+\begin{tikzpicture}[->,>=stealth']
+\node[shape=smoothed rectangle,
+	/pgf/smoothed rectangle/arc=8pt,
+	draw, very thin,
+	%inner sep=0pt,
+	] (s) {\vphantom{Gg}Smoothed};
+\node[shape=smoothed rectangle,
+	/pgf/smoothed rectangle/arc=8pt,
+	draw, very thin,
+	%inner sep=0pt,
+	] at (4.3, 0) (s) {Smoothed rectangle};
+
+\node[shape=smoothed rectangle,
+	/pgf/smoothed rectangle/arc=5pt,
+	draw, very thin,
+	text width=2.5cm,
+	%inner sep=0pt,
+	] at (0, -1.5) (s) {Smoothed \\ rectangle};
+\node[shape=smoothed rectangle,
+	/pgf/smoothed rectangle/arc=8pt,
+	draw, very thin,
+	%inner sep=0pt,
+	] at (4.3, -1.5) (s) {Smoothed rectangle};
+\end{tikzpicture}
+
+\end{document}
