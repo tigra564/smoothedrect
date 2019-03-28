@@ -5,6 +5,8 @@ TikZ figure — rectangle with smoothed corners and a number of convenient ancho
 
 Vanilla rectangle shipped with TikZ package may be drawn with smoothed corners. It takes merely to set something like `[rounded corners = 6pt]` in the rectangle style. However when connecting it to other figures with lines or arrows one may notice that connectors are clipped by the original rectangular background, i.e. without taking into account the fact that the border path is smoothed.
 
+![](smoothedrectdemo.png)
+
 This package introduces a smoothed rectangle for which the background path issue is fixed. Additionally it allows customizing the following parameters:
 
 * corner arc radius (e.g. `/pgf/smoothed rectangle/arc=10pt`)
